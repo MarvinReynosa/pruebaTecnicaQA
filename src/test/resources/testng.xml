@@ -1,0 +1,8 @@
+<!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd">
+<suite name="Google Selenium Test Suite">
+    <test name="Google Search Test">
+        <classes>
+            <class name="com.marvin_reynosa.test.GoogleSeleniumTest"/>
+        </classes>
+    </test>
+</suite>
