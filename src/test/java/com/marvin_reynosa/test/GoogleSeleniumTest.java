@@ -1,45 +1,73 @@
 package com.marvin_reynosa.test;
 
 import io.github.bonigarcia.wdm.WebDriverManager;
+import org.monte.media.Format;
+import org.monte.media.math.Rational;
+import org.monte.screenrecorder.ScreenRecorder;
 import org.openqa.selenium.*;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
+import org.testng.annotations.*;
 
+import java.awt.*;
+import java.awt.Rectangle;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
+
+import static org.monte.media.FormatKeys.*;
+import static org.monte.media.VideoFormatKeys.*;
 
 public class GoogleSeleniumTest {
-
     private WebDriver driver;
     private WebDriverWait wait;
+    private ScreenRecorder screenRecorder;
     private static final String SCREENSHOT_DIR = "screenshots";
     private static final String BASE_URL = "https://www.google.com";
-    //private static final String BASE_URL = "https://www.selenium.dev/documentation/";
     private static final String SEARCH_TERM = "Documentacion de selenium";
-    //https://www.selenium.dev/documentation/
-    private Random random = new Random();
 
     @BeforeClass
-    public void setUp() {
-        System.out.println("=== INICIANDO SESION DE SELENIUM ===");
+    public void setup() {
+        try {
+            GraphicsConfiguration gc = GraphicsEnvironment.getLocalGraphicsEnvironment()
+                    .getDefaultScreenDevice().getDefaultConfiguration();
+            File movieDir = new File("videos");
 
+            if (!movieDir.exists()) {
+                movieDir.mkdirs();
+            }
+            Format fileFormat = new Format(MediaTypeKey, MediaType.FILE, MimeTypeKey, MIME_AVI);
+            Format screenFormat = new Format(MediaTypeKey, MediaType.VIDEO,
+                    EncodingKey, ENCODING_AVI_TECHSMITH_SCREEN_CAPTURE,
+                    CompressorNameKey, ENCODING_AVI_TECHSMITH_SCREEN_CAPTURE,
+                    DepthKey, 24,
+                    FrameRateKey, new Rational(15, 1),
+                    QualityKey, 1.0f,
+                    KeyFrameIntervalKey, 15 * 60);
+            Format mouseFormat = new Format(MediaTypeKey, MediaType.VIDEO,
+                    EncodingKey, "black",
+                    FrameRateKey, new Rational(30, 1));
+            Format audioFormat = null;
+
+            screenRecorder = new MyScreenRecorder(gc,
+                    new Rectangle(Toolkit.getDefaultToolkit().getScreenSize()),
+                    fileFormat, screenFormat, mouseFormat, audioFormat, movieDir);
+            screenRecorder.start();
+            System.out.println("=== INICIANDO GRABACION DE VIDEO ===");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         WebDriverManager.chromedriver().setup();
-
         ChromeOptions options = new ChromeOptions();
-
         options.addArguments("--start-maximized");
         options.addArguments("--disable-notifications");
         options.addArguments("--remote-allow-origins=*");
@@ -47,11 +75,14 @@ public class GoogleSeleniumTest {
         options.addArguments("--disable-web-security");
         options.addArguments("--no-sandbox");
         options.addArguments("--disable-dev-shm-usage");
+        options.addArguments("--disable-features=VizDisplayCompositor");
+        options.addArguments("--disable-gpu");
+        options.addArguments("--disable-infobars");
 
         options.setExperimentalOption("excludeSwitches", new String[]{"enable-automation"});
         options.setExperimentalOption("useAutomationExtension", false);
 
-        options.addArguments("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+        options.addArguments("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36");
 
         Map<String, Object> prefs = new HashMap<>();
         prefs.put("credentials_enable_service", false);
@@ -61,262 +92,104 @@ public class GoogleSeleniumTest {
         driver = new ChromeDriver(options);
 
         ((JavascriptExecutor) driver).executeScript(
-                "Object.defineProperty(navigator, 'webdriver', {get: () => undefined})"
+                "Object.defineProperty(navigator, 'webdriver', {get: () => undefined});"
         );
 
         wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+        driver.manage().window().maximize();
 
         createScreenshotDirectory();
 
-        System.out.println("Navegador: Chrome (modo anti-deteccion)");
+        System.out.println("=== INICIANDO SESIÓN DE SELENIUM ===");
+        System.out.println("Navegador: Chrome");
         System.out.println("URL Base: " + BASE_URL);
     }
 
-    @Test(priority = 1)
-    public void testGoogleSearch() throws InterruptedException, IOException {
+    @Test
+    public void testGoogleSearch() {
         System.out.println("\n--- Paso 1: Navegar a Google ---");
         driver.get(BASE_URL);
-
-        humanPause(2000, 500);
-
-        takeScreenshot("00_pagina_principal.png");
-
-        handleCookiesGoogle();
+        waitForPageLoad();
+        takeScreenshot("01_google_home");
 
         System.out.println("--- Paso 2: Buscar '" + SEARCH_TERM + "' ---");
-
-        WebElement searchBox = wait.until(ExpectedConditions.elementToBeClickable(By.name("q")));
-        typeLikeHuman(searchBox, SEARCH_TERM);
-
-        humanPause(1000, 200);
-
-        searchBox.sendKeys(Keys.ENTER);
-
-        humanPause(3000, 500);
-        takeScreenshot("01_resultados_busqueda.png");
-
-        checkForCaptcha();
-    }
-
-    @Test(priority = 2, dependsOnMethods = "testGoogleSearch")
-    public void testClickDocumentationLink() throws InterruptedException, IOException {
-        System.out.println("\n--- Paso 3: Buscar enlace de documentacion de Selenium ---");
+        WebElement searchBox = wait.until(ExpectedConditions.presenceOfElementLocated(By.name("q")));
+        searchBox.sendKeys(SEARCH_TERM + Keys.ENTER);
+        waitForPageLoad();
+        takeScreenshot("02_google_results");
 
         checkForCaptcha();
 
-        humanPause(2000, 300);
-        boolean found = findSeleniumDocumentationLink();
+        System.out.println("--- Paso 3: Hacer clic en enlace de documentación ---");
+        clickSeleniumDocumentationLink();
 
-        if (!found) {
-            System.out.println("No se encontro el enlace especifico, buscando alternativas...");
-
-            found = findSeleniumLinkAlternative();
-        }
-
-        if (!found) {
-            throw new RuntimeException("No se pudo encontrar el enlace de documentacion de Selenium");
-        }
-
-        humanPause(3000, 500);
-
-        System.out.println("--- Paso 4: Capturar pantalla de documentacion ---");
-        takeScreenshot("02_documentacion_selenium.png");
+        waitForPageLoad();
+        takeScreenshot("03_selenium_documentation");
     }
 
-   /* @Test(priority = 3, dependsOnMethods = "testClickDocumentationLink")
-    public void testNavigateSideMenu() throws InterruptedException, IOException {
-        System.out.println("\n--- Paso 5: Navegar por los items del menu lateral ---");
+    @Test(dependsOnMethods = "testGoogleSearch")
+    public void testNavigateSideMenu() {
+        System.out.println("\n--- Paso 4: Navegar por los items del menu lateral ---");
 
-        humanPause(3000, 500);
+        String currentUrl = driver.getCurrentUrl();
+        if (!currentUrl.contains("selenium.dev/documentation")) {
+            System.out.println("No estamos en la pagina de documentacion. Navegando directamente...");
+            driver.get("https://www.selenium.dev/documentation/");
+            waitForPageLoad();
+        }
 
-        takeScreenshot("03_pagina_documentacion_inicio.png");
+        takeScreenshot("04_documentation_start");
 
         String[] menuItems = {
                 "Overview",
                 "WebDriver",
+                "Selenium Manager",
                 "Grid",
                 "IE Driver Server",
-                "Selenium IDE"
+                "IDE",
+                "Test Practices",
+                "Legacy"
         };
 
-        int itemCount = 1;
-        for (String menuItem : menuItems) {
+        for (String item : menuItems) {
             try {
-                System.out.println("Navegando a: " + menuItem);
+                System.out.println("Navegando a: " + item);
 
-                humanPause(1000, 200);
+                WebElement menuItem = findMenuItem(item);
 
-                // Intentar diferentes selectores para el menú
-                WebElement menuElement = findMenuItem(menuItem);
+                if (menuItem != null && menuItem.isDisplayed()) {
+                    ((JavascriptExecutor) driver).executeScript(
+                            "arguments[0].scrollIntoView({behavior: 'smooth', block: 'center'});",
+                            menuItem
+                    );
 
-                if (menuElement == null) {
-                    System.out.println("No se encontro: " + menuItem + ", continuando con el siguiente...");
-                    continue;
-                }
-
-                // Scroll suave hacia el elemento
-                ((JavascriptExecutor) driver).executeScript(
-                        "arguments[0].scrollIntoView({behavior: 'smooth', block: 'center'});",
-                        menuElement
-                );
-
-                humanPause(1000, 300);
-
-                try {
-                    menuElement.click();
-                } catch (Exception e) {
-                    ((JavascriptExecutor) driver).executeScript("arguments[0].click();", menuElement);
-                }
-
-                humanPause(2000, 500);
-
-                takeScreenshot("04_menu_" + itemCount + "_" + menuItem.replace(" ", "_") + ".png");
-
-                navigateBackToDocumentation();
-
-                itemCount++;
-
-            } catch (Exception e) {
-                System.out.println("Error al navegar a: " + menuItem + " - " + e.getMessage());
-                takeScreenshot("error_" + menuItem.replace(" ", "_") + ".png");
-            }
-        }
-
-        takeScreenshot("05_navegacion_completada.png");
-        System.out.println("=== Navegacion completada ===");
-    }*/
-   @Test(priority = 3, dependsOnMethods = "testClickDocumentationLink")
-   public void testNavigateSideMenu() throws InterruptedException, IOException {
-       System.out.println("\n--- Paso 5: Navegar por los items del menu lateral de la documentacion ---");
-
-       // Verificar que estamos en la URL correcta de documentación
-       String currentUrl = driver.getCurrentUrl();
-       if (!currentUrl.contains("selenium.dev/documentation")) {
-           System.out.println("No estamos en la página de documentación. Navegando directamente...");
-           driver.get("https://www.selenium.dev/documentation/");
-       }
-
-       humanPause(3000, 500);
-       takeScreenshot("03_pagina_documentacion_inicio.png");
-       String[] menuItems = {
-               "Overview",
-               "WebDriver",
-               "Grid",
-               "IE Driver Server",
-               "Selenium IDE"
-       };
-
-       int itemCount = 1;
-       for (String menuItem : menuItems) {
-           try {
-               System.out.println("Navegando a: " + menuItem);
-
-               humanPause(1000, 200);
-
-               WebElement menuElement = findMenuItem(menuItem);
-
-               if (menuElement == null) {
-                   System.out.println("No se encontro: " + menuItem + ", continuando con el siguiente...");
-                   continue;
-               }
-               ((JavascriptExecutor) driver).executeScript(
-                       "arguments[0].scrollIntoView({behavior: 'smooth', block: 'center'});",
-                       menuElement
-               );
-
-               humanPause(1000, 300);
-
-               try {
-                   menuElement.click();
-               } catch (Exception e) {
-                   ((JavascriptExecutor) driver).executeScript("arguments[0].click();", menuElement);
-               }
-               humanPause(3000, 500);
-
-               takeScreenshot("04_menu_" + itemCount + "_" + menuItem.replace(" ", "_") + ".png");
-
-               System.out.println("Navegacion a " + menuItem + " completada");
-               itemCount++;
-
-           } catch (Exception e) {
-               System.out.println("Error al navegar a: " + menuItem + " - " + e.getMessage());
-               takeScreenshot("error_" + menuItem.replace(" ", "_") + ".png");
-           }
-       }
-       takeScreenshot("05_navegacion_completada.png");
-       System.out.println("=== Navegacion por el menu completada ===");
-   }
-
-    @AfterClass
-    public void tearDown() {
-        System.out.println("\n=== FINALIZANDO SESION DE SELENIUM ===");
-        System.out.println("Screenshots guardados en: " + new File(SCREENSHOT_DIR).getAbsolutePath());
-
-        if (driver != null) {
-            humanPause(2000, 0);
-            driver.quit();
-        }
-    }
-
-    private void humanPause(int base, int randomRange) {
-        try {
-            Thread.sleep(base + random.nextInt(randomRange));
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
-    }
-
-    private void typeLikeHuman(WebElement element, String text) {
-        for (char c : text.toCharArray()) {
-            element.sendKeys(String.valueOf(c));
-            humanPause(50, 150);
-        }
-    }
-
-    private void handleCookiesGoogle() {
-        try {
-            String[] cookieSelectors = {
-                    "//button[contains(.,'Aceptar')]",
-                    "//button[contains(.,'Accept')]",
-                    "//button[contains(.,'Acepto')]",
-                    "//button[@id='L2AGLb']",
-                    "//div[contains(text(),'Aceptar')]",
-                    "//form//button"
-            };
-
-            for (String selector : cookieSelectors) {
-                try {
-                    WebElement cookieButton = driver.findElement(By.xpath(selector));
-                    if (cookieButton.isDisplayed()) {
-                        cookieButton.click();
-                        System.out.println("Cookies aceptadas con selector: " + selector);
-                        humanPause(1000, 500);
-                        break;
+                    try {
+                        menuItem.click();
+                    } catch (ElementClickInterceptedException e) {
+                        ((JavascriptExecutor) driver).executeScript("arguments[0].click();", menuItem);
                     }
-                } catch (Exception e) {
+
+                    waitForPageLoad();
+                    takeScreenshot("success_" + item.replace(" ", "_"));
+                    System.out.println("Navegación exitosa a: " + item);
+                } else {
+                    System.out.println("No se encontro el elemento del menu: " + item);
+                    takeScreenshot("error_" + item.replace(" ", "_"));
                 }
+            } catch (Exception e) {
+                System.err.println("Error al navegar a: " + item + " - " + e.getMessage());
+                takeScreenshot("error_" + item.replace(" ", "_"));
             }
-        } catch (Exception e) {
-            System.out.println("No se encontro dialogo de cookies o ya estaba aceptado");
         }
+
+        takeScreenshot("05_navigation_complete");
+        System.out.println("=== Navegacion por el menu completada ===");
     }
 
-    private void checkForCaptcha() throws IOException {
-        String pageSource = driver.getPageSource().toLowerCase();
-        if (pageSource.contains("captcha") ||
-                pageSource.contains("robot") ||
-                pageSource.contains("automated")) {
-            System.out.println("ATENCION! Posible captcha detectado");
-            takeScreenshot("posible_captcha.png");
-
-            System.out.println("Esperando 5 segundos por si hay que resolver captcha manualmente...");
-            humanPause(3000, 0);
-        }
-    }
-
-    private boolean findSeleniumDocumentationLink() {
+    private void clickSeleniumDocumentationLink() {
         try {
             List<WebElement> links = driver.findElements(By.xpath("//a/h3|//a//h3"));
+            boolean clicked = false;
 
             for (WebElement link : links) {
                 String linkText = link.getText().toLowerCase();
@@ -324,50 +197,22 @@ public class GoogleSeleniumTest {
                         (linkText.contains("documentation") ||
                                 linkText.contains("documentacion") ||
                                 linkText.contains("docs"))) {
-                    System.out.println("Encontrado (texto): " + link.getText());
                     link.click();
-                    return true;
+                    clicked = true;
+                    System.out.println("Enlace encontrado por texto: " + link.getText());
+                    break;
                 }
             }
 
-            return false;
-        } catch (Exception e) {
-            System.out.println("Error en busqueda primaria: " + e.getMessage());
-            return false;
-        }
-    }
-
-    private boolean findSeleniumLinkAlternative() {
-        try {
-            List<WebElement> links = driver.findElements(By.xpath("//a[contains(@href, 'selenium')]"));
-
-            for (WebElement link : links) {
-                String href = link.getAttribute("href");
-                String text = link.getText().toLowerCase();
-
-                if ((href != null && href.contains("selenium.dev")) ||
-                        text.contains("documentation") ||
-                        text.contains("docs")) {
-                    System.out.println("Encontrado (URL): " + text);
-                    link.click();
-                    return true;
-                }
+            if (!clicked) {
+                WebElement seleniumLink = wait.until(ExpectedConditions.elementToBeClickable(
+                        By.xpath("//a[contains(@href, 'selenium.dev')]")));
+                seleniumLink.click();
+                System.out.println("Enlace encontrado por URL");
             }
-
-            WebElement organicResult = wait.until(ExpectedConditions.presenceOfElementLocated(
-                    By.xpath("//div[@id='search']//a[contains(@href, 'selenium')]")
-            ));
-
-            if (organicResult != null) {
-                System.out.println("Encontrado en resultados orgánicos");
-                organicResult.click();
-                return true;
-            }
-
-            return false;
         } catch (Exception e) {
-            System.out.println("Error en busqueda alternativa: " + e.getMessage());
-            return false;
+            System.err.println("Error al hacer clic en el enlace: " + e.getMessage());
+            takeScreenshot("error_clicking_link");
         }
     }
 
@@ -378,7 +223,8 @@ public class GoogleSeleniumTest {
                 "//div[contains(text(), '" + itemName + "')]/..",
                 "//*[contains(@class, 'menu')]//*[contains(text(), '" + itemName + "')]",
                 "//nav//*[contains(text(), '" + itemName + "')]",
-                "//aside//*[contains(text(), '" + itemName + "')]"
+                "//aside//*[contains(text(), '" + itemName + "')]",
+                "//a[@class='td-sidebar-link td-sidebar-link__page ' and contains(text(), '" + itemName + "')]"
         };
 
         for (String selector : selectors) {
@@ -393,24 +239,51 @@ public class GoogleSeleniumTest {
         return null;
     }
 
-    private void navigateBackToDocumentation() {
-        try {
-            WebElement homeLink = driver.findElement(By.xpath(
-                    "//a[contains(@href, 'selenium.dev')] | //a[contains(text(), 'Selenium')] | //a[contains(@class, 'logo')]"
-            ));
-            homeLink.click();
-            humanPause(2000, 500);
-        } catch (Exception e) {
-            driver.navigate().back();
-            humanPause(2000, 500);
+    private void takeScreenshot(String filename) {
+        if (driver != null) {
+            try {
+                File srcFile = ((TakesScreenshot) driver).getScreenshotAs(OutputType.FILE);
+                Files.createDirectories(Paths.get(SCREENSHOT_DIR));
+
+                Path destination = Paths.get(SCREENSHOT_DIR, filename + ".png");
+                int counter = 1;
+                while (Files.exists(destination)) {
+                    destination = Paths.get(SCREENSHOT_DIR, filename + "_" + counter + ".png");
+                    counter++;
+                }
+
+                Files.copy(srcFile.toPath(), destination, StandardCopyOption.REPLACE_EXISTING);
+                System.out.println("Captura guardada: " + destination.getFileName());
+            } catch (WebDriverException | IOException e) {
+                System.err.println("No se pudo tomar la captura: " + filename);
+            }
         }
     }
 
-    private void takeScreenshot(String filename) throws IOException {
-        File screenshot = ((TakesScreenshot) driver).getScreenshotAs(OutputType.FILE);
-        Path destination = Paths.get(SCREENSHOT_DIR, filename);
-        Files.copy(screenshot.toPath(), destination);
-        System.out.println("Screenshot guardado: " + filename);
+    private void waitForPageLoad() {
+        try {
+            wait.until(webDriver -> ((JavascriptExecutor) webDriver)
+                    .executeScript("return document.readyState").equals("complete"));
+        } catch (TimeoutException e) {
+            System.err.println("La pagina tardo demasiado en cargar.");
+        }
+    }
+
+    private void checkForCaptcha() {
+        String pageSource = driver.getPageSource().toLowerCase();
+        if (pageSource.contains("captcha") ||
+                pageSource.contains("robot") ||
+                pageSource.contains("automated")) {
+            System.out.println("ATENCION! Posible captcha detectado");
+            takeScreenshot("posible_captcha");
+
+            System.out.println("Esperando 5 segundos para resolucion manual...");
+            try {
+                Thread.sleep(5000);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
     }
 
     private void createScreenshotDirectory() {
@@ -419,5 +292,26 @@ public class GoogleSeleniumTest {
             directory.mkdirs();
             System.out.println("Directorio creado: " + directory.getAbsolutePath());
         }
+    }
+
+    @AfterClass
+    public void tearDown() {
+        System.out.println("\n=== FINALIZANDO SESIÓN DE SELENIUM ===");
+
+        if (driver != null) {
+            driver.quit();
+        }
+
+        try {
+            if (screenRecorder != null) {
+                screenRecorder.stop();  // Detener la grabación
+                System.out.println("=== GRABACIÓN DE VIDEO FINALIZADA ===");
+                System.out.println("Videos guardados en: videos/");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        System.out.println("Screenshots guardados en: " + new File(SCREENSHOT_DIR).getAbsolutePath());
     }
 }
