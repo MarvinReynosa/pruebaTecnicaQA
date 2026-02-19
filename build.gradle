@@ -10,13 +10,21 @@ repositories {
 }
 
 dependencies {
-    testImplementation ("org.testng:testng:7.7.1")
-    testImplementation ("org.seleniumhq.selenium:selenium-java:4.15.0")
-    testImplementation ("io.github.bonigarcia:webdrivermanager:5.6.2")
-    testImplementation ("org.slf4j:slf4j-simple:2.0.9")
+    testImplementation ("org.testng:testng:7.9.0")
+    testImplementation ("org.seleniumhq.selenium:selenium-java:4.27.0")
+    testImplementation ("io.github.bonigarcia:webdrivermanager:6.1.0")
+    testImplementation ("org.slf4j:slf4j-simple:2.0.16")
     testImplementation ("com.github.stephenc.monte:monte-screen-recorder:0.7.7.0")
     testImplementation platform('org.junit:junit-bom:5.9.1')
     testImplementation 'org.junit.jupiter:junit-jupiter'
+
+    testImplementation ("org.apache.commons:commons-lang3:3.17.0")
+    testImplementation ("org.apache.commons:commons-compress:1.27.1")
+    testImplementation ("commons-io:commons-io:2.18.0")
+    testImplementation ("com.fasterxml.jackson.core:jackson-databind:2.18.2")
+    testImplementation ("com.fasterxml.jackson.core:jackson-core:2.18.2")
+    testImplementation ("org.bouncycastle:bcprov-jdk18on:1.79")
+    testImplementation ("org.bouncycastle:bcpkix-jdk18on:1.79")
 }
 
 test {

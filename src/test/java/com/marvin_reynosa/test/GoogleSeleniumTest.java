@@ -1,5 +1,6 @@
 package com.marvin_reynosa.test;
 
+
 import io.github.bonigarcia.wdm.WebDriverManager;
 import org.monte.media.Format;
 import org.monte.media.math.Rational;
@@ -23,11 +24,15 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import static org.monte.media.FormatKeys.*;
 import static org.monte.media.VideoFormatKeys.*;
 
 public class GoogleSeleniumTest {
+    private static final Logger LOGGER = Logger.getLogger(GoogleSeleniumTest.class.getName());
+
     private WebDriver driver;
     private WebDriverWait wait;
     private ScreenRecorder screenRecorder;
@@ -43,7 +48,9 @@ public class GoogleSeleniumTest {
             File movieDir = new File("videos");
 
             if (!movieDir.exists()) {
-                movieDir.mkdirs();
+                if (!movieDir.mkdirs()) {
+                    System.err.println("No se pudo crear el directorio de videos");
+                }
             }
             Format fileFormat = new Format(MediaTypeKey, MediaType.FILE, MimeTypeKey, MIME_AVI);
             Format screenFormat = new Format(MediaTypeKey, MediaType.VIDEO,
@@ -289,8 +296,11 @@ public class GoogleSeleniumTest {
     private void createScreenshotDirectory() {
         File directory = new File(SCREENSHOT_DIR);
         if (!directory.exists()) {
-            directory.mkdirs();
-            System.out.println("Directorio creado: " + directory.getAbsolutePath());
+            if (!directory.mkdirs()) {
+                System.err.println("No se pudo crear el directorio: " + SCREENSHOT_DIR);
+            } else {
+                System.out.println("Directorio creado: " + directory.getAbsolutePath());
+            }
         }
     }
 

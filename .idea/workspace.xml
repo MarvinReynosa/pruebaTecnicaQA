@@ -4,12 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="fcec7863-d289-4129-8ecc-c4cc2e91b99a" name="Changes" comment="Se hace el primer comit posterior a subirlo">
-      <change afterPath="$PROJECT_DIR$/src/test/java/com/marvin_reynosa/test/MyScreenRecorder.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/build.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/build.gradle" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/java/com/marvin_reynosa/test/GoogleSeleniumTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/com/marvin_reynosa/test/GoogleSeleniumTest.java" afterDir="false" />
-    </list>
+    <list default="true" id="fcec7863-d289-4129-8ecc-c4cc2e91b99a" name="Changes" comment="Se hace comit, en la clase GoogleSeleniumTest.java y cree nueva clase MyScreenRecorder.java" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -102,19 +97,36 @@
       <option name="project" value="LOCAL" />
       <updated>1771473021630</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="Se hace comit, en la clase GoogleSeleniumTest.java y cree nueva clase MyScreenRecorder.java">
+      <option name="closed" value="true" />
+      <created>1771474686835</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1771474686835</updated>
+    </task>
+    <task id="LOCAL-00003" summary="Se hace comit, en la clase GoogleSeleniumTest.java y cree nueva clase MyScreenRecorder.java">
+      <option name="closed" value="true" />
+      <created>1771476435500</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1771476435500</updated>
+    </task>
+    <option name="localTasksCounter" value="4" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="Se hace el primer comit posterior a subirlo" />
-    <option name="LAST_COMMIT_MESSAGE" value="Se hace el primer comit posterior a subirlo" />
+    <MESSAGE value="Se hace comit, en la clase GoogleSeleniumTest.java y cree nueva clase MyScreenRecorder.java" />
+    <option name="LAST_COMMIT_MESSAGE" value="Se hace comit, en la clase GoogleSeleniumTest.java y cree nueva clase MyScreenRecorder.java" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
       <breakpoints>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/org/example/Main.java</url>
-          <line>15</line>
+          <line>7</line>
           <option name="timeStamp" value="1" />
         </line-breakpoint>
       </breakpoints>

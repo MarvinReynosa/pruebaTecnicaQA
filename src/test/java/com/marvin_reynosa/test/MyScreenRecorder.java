@@ -6,7 +6,7 @@ import org.monte.screenrecorder.ScreenRecorder;
 import java.awt.*;
 import java.io.File;
 import java.io.IOException;
-public class MyScreenRecorder extends ScreenRecorder{
+public class MyScreenRecorder extends ScreenRecorder {
     public MyScreenRecorder(GraphicsConfiguration cfg, Rectangle captureArea, Format fileFormat, Format screenFormat,
                             Format mouseFormat, Format audioFormat, File movieFolder)
             throws IOException, AWTException {
@@ -16,7 +16,9 @@ public class MyScreenRecorder extends ScreenRecorder{
     @Override
     protected File createMovieFile(Format fileFormat) throws IOException {
         if (!movieFolder.exists()) {
-            movieFolder.mkdirs();
+            if (!movieFolder.mkdirs()) {
+                throw new IOException("No se pudo crear el directorio: " + movieFolder);
+            }
         } else if (!movieFolder.isDirectory()) {
             throw new IOException("\"" + movieFolder + "\" no es un directorio.");
         }
